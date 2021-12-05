@@ -15,13 +15,12 @@ where
         .lines()
         .filter_map(|line| line.ok())
         .filter_map(|line| {
-            re.captures(&line).map(|cap|
-                Line {
-                    x1: cap[1].parse().unwrap(),
-                    y1: cap[2].parse().unwrap(),
-                    x2: cap[3].parse().unwrap(),
-                    y2: cap[4].parse().unwrap(),
-                })
+            re.captures(&line).map(|cap| Line {
+                x1: cap[1].parse().unwrap(),
+                y1: cap[2].parse().unwrap(),
+                x2: cap[3].parse().unwrap(),
+                y2: cap[4].parse().unwrap(),
+            })
         })
         .collect())
 }
@@ -69,7 +68,6 @@ impl Line {
         } else {
             (1, 1)
         }
-
     }
 }
 
