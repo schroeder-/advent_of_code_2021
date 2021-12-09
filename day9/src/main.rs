@@ -10,10 +10,11 @@ fn find_low_points(d: &[Vec<u32>]) -> Vec<(usize, usize)> {
     for y in 0..y_max {
         for x in 0..x_max {
             let p = d[y][x];
-            if x == 0 || d[y][x - 1] > p &&
-                y == 0 || d[y - 1][x] > p &&
-                    x >= x_max - 1 || d[y][x + 1] > p &&
-                        y >= y_max - 1 || d[y + 1][x] > p{
+            if (x == 0 || d[y][x - 1] > p)
+                && (y == 0 || d[y - 1][x] > p)
+                && (x >= x_max - 1 || d[y][x + 1] > p)
+                && (y >= y_max - 1 || d[y + 1][x] > p)
+            {
                 lows.push((x, y));
             }
         }
