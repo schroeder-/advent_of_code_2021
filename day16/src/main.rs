@@ -48,18 +48,22 @@ impl PaketOperator {
         }
     }
 }
+#[derive(Debug, PartialEq)]
+struct Operator{
+    operator: PaketOperator,
+    ops: Vec<Paket>
+}
 
 #[derive(Debug, PartialEq)]
 enum PaketContent {
     Value(usize),
-    Operator(Vec<Paket>),
+    Operator(Operator),
 }
 
 #[derive(Debug, PartialEq)]
 struct Paket {
     version: usize,
     content: PaketContent,
-    operator: PaketOperator,
 }
 
 impl Paket {
@@ -69,44 +73,43 @@ impl Paket {
             if bin_str.is_empty() {
                 break;
             }
-            let stop = bin_str.drain(0..1).next().unwrap() == '0';
+            let stop = bin_str.drain(0..1).next().unwrap_or_default() == '0';
             r.extend(bin_str.drain(0..=3));
             if stop {
                 break;
             }
         }
-        usize::from_str_radix(&r, 2).unwrap()
+        usize::from_str_radix(&r, 2).unwrap_or_default()
     }
 
     fn from_drain_str(bin_str: &mut String) -> Self {
-        let version = usize::from_str_radix(bin_str.drain(0..3).as_str(), 2).unwrap();
+        let version = usize::from_str_radix(bin_str.drain(0..3).as_str(), 2).unwrap_or_default();
         let operator = PaketOperator::from_type(
-            usize::from_str_radix(bin_str.drain(0..3).as_str(), 2).unwrap(),
+            usize::from_str_radix(bin_str.drain(0..3).as_str(), 2).unwrap_or_default(),
         );
         let content = if operator == PaketOperator::Value {
             PaketContent::Value(Self::parse_part(bin_str))
         } else {
-            let l = if bin_str.drain(0..1).next().unwrap() == '1' {
+            let l = if bin_str.drain(0..1).next().unwrap_or_default() == '1' {
                 11
             } else {
                 15
             };
-            let len = usize::from_str_radix(bin_str.drain(0..l).as_str(), 2).unwrap();
+            let len = usize::from_str_radix(bin_str.drain(0..l).as_str(), 2).unwrap_or_default();
             if l == 11 {
-                PaketContent::Operator((0..len).map(|_| Self::from_drain_str(bin_str)).collect())
+                PaketContent::Operator(Operator{ operator, ops: (0..len).map(|_| Self::from_drain_str(bin_str)).collect()})
             } else {
                 let mut data: String = bin_str.drain(..len).collect();
                 let mut res: Vec<Self> = Vec::new();
                 while data.len() > 5 {
                     res.push(Self::from_drain_str(&mut data));
                 }
-                PaketContent::Operator(res)
+                PaketContent::Operator(Operator{ operator, ops: res})
             }
         };
         Self {
             version,
             content,
-            operator,
         }
     }
 
@@ -116,8 +119,8 @@ impl Paket {
     }
 
     fn get_version_sum(&self) -> usize {
-        let sub = if let PaketContent::Operator(o) = &self.content {
-            o.iter().map(Self::get_version_sum).sum()
+        let sub = if let PaketContent::Operator(o) = &self.content{
+            o.ops.iter().map(Self::get_version_sum).sum()
         } else {
             0
         };
@@ -127,28 +130,33 @@ impl Paket {
     fn get_result(&self) -> usize {
         match &self.content {
             PaketContent::Value(v) => *v,
-            PaketContent::Operator(ops) => match self.operator {
-                PaketOperator::Sum => ops.iter().map(Self::get_result).sum(),
-                PaketOperator::Product => ops.iter().map(Self::get_result).product(),
-                PaketOperator::Minimum => ops.iter().map(Self::get_result).min().unwrap(),
-                PaketOperator::Maximum => ops.iter().map(Self::get_result).max().unwrap(),
-                PaketOperator::Gtr => {
-                    if ops[0].get_result() > ops[1].get_result() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                PaketOperator::Lt => {
-                    if ops[0].get_result() < ops[1].get_result() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                PaketOperator::Eq => {
-                    if ops[0].get_result() == ops[1].get_result() {
-                        1
+            PaketContent::Operator(o) => match o.operator {
+                PaketOperator::Sum => o.ops.iter().map(Self::get_result).sum(),
+                PaketOperator::Product => o.ops.iter().map(Self::get_result).product(),
+                PaketOperator::Minimum => o.ops.iter().map(Self::get_result).min().unwrap_or_default(),
+                PaketOperator::Maximum => o.ops.iter().map(Self::get_result).max().unwrap_or_default(),
+                PaketOperator::Gtr | PaketOperator::Lt | PaketOperator::Eq => {
+                    if let [a, b] = &o.ops[..]{
+                        let a = a.get_result();
+                        let b = b.get_result();
+                        match o.operator{
+                            PaketOperator::Gtr =>  if a > b {
+                                1
+                            } else {
+                                0
+                            },
+                            PaketOperator::Lt => if a < b {
+                                1
+                            } else {
+                                0
+                            } ,
+                            PaketOperator::Eq => if a == b {
+                                1
+                            } else {
+                                0
+                            },
+                            _ => unreachable!()
+                        }
                     } else {
                         0
                     }
@@ -167,7 +175,6 @@ fn test_parsing() {
     assert_eq!(
         p1,
         Paket {
-            operator: PaketOperator::Value,
             version: 6,
             content: PaketContent::Value(2021)
         }
@@ -178,19 +185,19 @@ fn test_parsing() {
         p2,
         Paket {
             version: 1,
-            operator: PaketOperator::Lt,
-            content: PaketContent::Operator(vec![
+            content: PaketContent::Operator(Operator{
+                operator: PaketOperator::Lt,
+
+                ops: vec![
                 Paket {
                     version: 6,
-                    operator: PaketOperator::Value,
                     content: PaketContent::Value(10)
                 },
                 Paket {
                     version: 2,
-                    operator: PaketOperator::Value,
                     content: PaketContent::Value(20)
                 },
-            ])
+            ]})
         }
     );
     let input = "EE00D40C823060";
@@ -199,24 +206,22 @@ fn test_parsing() {
         p3,
         Paket {
             version: 7,
-            operator: PaketOperator::Maximum,
-            content: PaketContent::Operator(vec![
+            content: PaketContent::Operator(Operator{
+                operator: PaketOperator::Maximum,
+                ops: vec![
                 Paket {
                     version: 2,
-                    operator: PaketOperator::Value,
                     content: PaketContent::Value(1)
                 },
                 Paket {
                     version: 4,
-                    operator: PaketOperator::Value,
                     content: PaketContent::Value(2)
                 },
                 Paket {
                     version: 1,
-                    operator: PaketOperator::Value,
                     content: PaketContent::Value(3)
                 }
-            ])
+            ]})
         }
     );
 }
