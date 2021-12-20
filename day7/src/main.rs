@@ -14,25 +14,25 @@ where
     Ok(res)
 }
 
-fn fuel_calc<F>(crap_positions: &[i32], func: F) -> (i32, i32) where F: Fn(i32, i32) -> i32{
+fn fuel_calc<F>(crap_positions: &[i32], func: F) -> (i32, i32)
+where
+    F: Fn(i32, i32) -> i32,
+{
     let max = crap_positions.iter().max().copied().unwrap();
     let min = crap_positions.iter().min().copied().unwrap();
-    let fuels: Vec<_> = (min..=max).map(|f|
-        crap_positions.iter()
-            .map(|x| {
-                func(*x, f)
-            }).sum()).collect();
+    let fuels: Vec<_> = (min..=max)
+        .map(|f| crap_positions.iter().map(|x| func(*x, f)).sum())
+        .collect();
     let min: i32 = fuels.iter().min().copied().unwrap();
     let v = crap_positions[fuels.iter().position(|x| *x == min).unwrap()];
     (min, v)
 }
 
-
-fn diff(x: i32, y: i32) -> i32{
+fn diff(x: i32, y: i32) -> i32 {
     (x - y).abs()
 }
 
-fn diff2(x: i32, y: i32) -> i32{
+fn diff2(x: i32, y: i32) -> i32 {
     let n = (x - y).abs();
     // gaussian sum formula
     (n.pow(2) + n) / 2

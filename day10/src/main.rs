@@ -15,22 +15,20 @@ where
 
 fn check_line(l: &str) -> usize {
     let mut stack = Vec::new();
-    let illegal = l
-        .chars()
-        .find(|c| {
-            match c {
-                '(' => stack.push(')'),
-                '[' => stack.push(']'),
-                '{' => stack.push('}'),
-                '<' => stack.push('>'),
-                _ => {
-                    if Some(*c) != stack.pop() {
-                        return true;
-                    }
+    let illegal = l.chars().find(|c| {
+        match c {
+            '(' => stack.push(')'),
+            '[' => stack.push(']'),
+            '{' => stack.push('}'),
+            '<' => stack.push('>'),
+            _ => {
+                if Some(*c) != stack.pop() {
+                    return true;
                 }
             }
-            false
-        });
+        }
+        false
+    });
     if let Some(c) = illegal {
         match c {
             ')' => 3,

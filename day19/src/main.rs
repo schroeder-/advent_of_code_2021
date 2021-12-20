@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
-use std::collections::HashSet;
 use itertools::Itertools;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -16,30 +16,126 @@ struct Position {
 impl Position {
     fn rotate(&self, rot: u8) -> Self {
         match rot {
-    0  => Position { x:  self.x, y:  self.y, z:  self.z},
-    1  => Position { x:  self.x, y:  self.z, z: -self.y},
-    2  => Position { x:  self.x, y: -self.y, z: -self.z},
-    3  => Position { x:  self.x, y: -self.z, z:  self.y},
-    4  => Position { x:  self.y, y:  self.x, z: -self.z},
-    5  => Position { x:  self.y, y:  self.z, z:  self.x},
-    6  => Position { x:  self.y, y: -self.x, z:  self.z},
-    7  => Position { x:  self.y, y: -self.z, z: -self.x},
-    8  => Position { x:  self.z, y:  self.x, z:  self.y},
-    9  => Position { x:  self.z, y:  self.y, z: -self.x},
-    10 => Position { x:  self.z, y: -self.x, z: -self.y},
-    11 => Position { x:  self.z, y: -self.y, z:  self.x},
-    12 => Position { x: -self.x, y:  self.y, z: -self.z},
-    13 => Position { x: -self.x, y:  self.z, z:  self.y},
-    14 => Position { x: -self.x, y: -self.y, z:  self.z},
-    15 => Position { x: -self.x, y: -self.z, z: -self.y},
-    16 => Position { x: -self.y, y:  self.x, z:  self.z},
-    17 => Position { x: -self.y, y:  self.z, z: -self.x},
-    18 => Position { x: -self.y, y: -self.x, z: -self.z},
-    19 => Position { x: -self.y, y: -self.z, z:  self.x},
-    20 => Position { x: -self.z, y:  self.x, z: -self.y},
-    21 => Position { x: -self.z, y:  self.y, z:  self.x},
-    22 => Position { x: -self.z, y: -self.x, z:  self.y},
-    23 => Position { x: -self.z, y: -self.y, z: -self.x},
+            0 => Position {
+                x: self.x,
+                y: self.y,
+                z: self.z,
+            },
+            1 => Position {
+                x: self.x,
+                y: self.z,
+                z: -self.y,
+            },
+            2 => Position {
+                x: self.x,
+                y: -self.y,
+                z: -self.z,
+            },
+            3 => Position {
+                x: self.x,
+                y: -self.z,
+                z: self.y,
+            },
+            4 => Position {
+                x: self.y,
+                y: self.x,
+                z: -self.z,
+            },
+            5 => Position {
+                x: self.y,
+                y: self.z,
+                z: self.x,
+            },
+            6 => Position {
+                x: self.y,
+                y: -self.x,
+                z: self.z,
+            },
+            7 => Position {
+                x: self.y,
+                y: -self.z,
+                z: -self.x,
+            },
+            8 => Position {
+                x: self.z,
+                y: self.x,
+                z: self.y,
+            },
+            9 => Position {
+                x: self.z,
+                y: self.y,
+                z: -self.x,
+            },
+            10 => Position {
+                x: self.z,
+                y: -self.x,
+                z: -self.y,
+            },
+            11 => Position {
+                x: self.z,
+                y: -self.y,
+                z: self.x,
+            },
+            12 => Position {
+                x: -self.x,
+                y: self.y,
+                z: -self.z,
+            },
+            13 => Position {
+                x: -self.x,
+                y: self.z,
+                z: self.y,
+            },
+            14 => Position {
+                x: -self.x,
+                y: -self.y,
+                z: self.z,
+            },
+            15 => Position {
+                x: -self.x,
+                y: -self.z,
+                z: -self.y,
+            },
+            16 => Position {
+                x: -self.y,
+                y: self.x,
+                z: self.z,
+            },
+            17 => Position {
+                x: -self.y,
+                y: self.z,
+                z: -self.x,
+            },
+            18 => Position {
+                x: -self.y,
+                y: -self.x,
+                z: -self.z,
+            },
+            19 => Position {
+                x: -self.y,
+                y: -self.z,
+                z: self.x,
+            },
+            20 => Position {
+                x: -self.z,
+                y: self.x,
+                z: -self.y,
+            },
+            21 => Position {
+                x: -self.z,
+                y: self.y,
+                z: self.x,
+            },
+            22 => Position {
+                x: -self.z,
+                y: -self.x,
+                z: self.y,
+            },
+            23 => Position {
+                x: -self.z,
+                y: -self.y,
+                z: -self.x,
+            },
             _ => unreachable!(),
         }
     }
@@ -60,23 +156,20 @@ impl Position {
         }
     }
 
-    fn manhatten_distance(&self, other: &Self) -> isize{
+    fn manhatten_distance(&self, other: &Self) -> isize {
         (self.x - other.x).abs() + (self.y - other.y).abs() + (self.z - other.z).abs()
     }
 }
 
-
 #[derive(Debug, Hash, Clone)]
 struct ScannerMap {
-    beacons: Vec<Position>
+    beacons: Vec<Position>,
 }
-
 
 impl ScannerMap {
     fn from_strings(strs: &[String]) -> Option<Self> {
         lazy_static! {
-            static ref RE: regex::Regex =
-                regex::Regex::new(r"\-\-\- scanner \d* \-\-\-$").unwrap();
+            static ref RE: regex::Regex = regex::Regex::new(r"\-\-\- scanner \d* \-\-\-$").unwrap();
         }
         let firstline = strs.first().unwrap();
         if RE.is_match(firstline) {
@@ -100,9 +193,7 @@ impl ScannerMap {
 
     fn rotate(&self, rot: u8) -> Self {
         let beacons = self.beacons.iter().map(|b| b.rotate(rot)).collect();
-        Self {
-            beacons,
-        }
+        Self { beacons }
     }
 }
 
@@ -115,7 +206,12 @@ fn find_beacons(all_scans: &mut HashSet<Position>, scan: &ScannerMap) -> Option<
             .map(|(p1, p2)| p1.sub_ref(p2));
         for dist in dists {
             let normalized = rotated_scan.beacons.iter().map(|p| p.add_ref(&dist));
-            if normalized.clone().filter(|pp| all_scans.contains(pp)).count() >= 12 {
+            if normalized
+                .clone()
+                .filter(|pp| all_scans.contains(pp))
+                .count()
+                >= 12
+            {
                 all_scans.extend(normalized);
                 return Some(dist);
             }
@@ -137,7 +233,12 @@ fn find_all_beacons_and_manhatten_distance(scanner: &mut Vec<ScannerMap>) -> (us
         }
     }
     let beacon_cnt = total_scanner.len();
-    let manhatten_max = dists.iter().tuple_combinations().map(|(p1, p2)| p2.manhatten_distance(p1)).max().unwrap();
+    let manhatten_max = dists
+        .iter()
+        .tuple_combinations()
+        .map(|(p1, p2)| p2.manhatten_distance(p1))
+        .max()
+        .unwrap();
     (beacon_cnt, manhatten_max)
 }
 
